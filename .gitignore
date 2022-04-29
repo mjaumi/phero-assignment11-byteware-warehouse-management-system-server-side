@@ -1,3 +1,4 @@
 # Igonore file list
 
 node_modules
+.env
