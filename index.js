@@ -51,6 +51,14 @@ async function run() {
             res.send(updateResult);
         });
 
+        //DELETE API for a specific item
+        app.delete('/deleteItem/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const deleteResult = await itemsCollection.deleteOne(query);
+            res.send(deleteResult);
+        });
+
     } finally {
 
     }
