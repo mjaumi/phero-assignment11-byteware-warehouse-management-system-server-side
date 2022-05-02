@@ -59,6 +59,13 @@ async function run() {
             res.send(deleteResult);
         });
 
+        //POST API to add new item
+        app.post('/addNewItem', async (req, res) => {
+            const newItem = req.body;
+            const addResult = await itemsCollection.insertOne(newItem);
+            res.send(addResult);
+        });
+
     } finally {
 
     }
