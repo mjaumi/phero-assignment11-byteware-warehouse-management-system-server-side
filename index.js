@@ -37,7 +37,7 @@ async function run() {
         });
 
         //PUT API for a specific item
-        app.put('/item/:id', async (req, res) => {
+        app.put('/updateItem/:id', async (req, res) => {
             const id = req.params.id;
             const updatedQuantity = req.body;
             const filter = { _id: ObjectId(id) };
