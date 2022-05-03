@@ -36,6 +36,15 @@ async function run() {
             res.send(item);
         });
 
+        // GET API for items added by supplier
+        app.get('/itemsBySupplier', async (req, res) => {
+            const supplierEmail = req.query.email;
+            const query = { supplierEmail };
+            const cursor = itemsCollection.find(query);
+            const supplierItems = await cursor.toArray();
+            res.send(supplierItems);
+        });
+
         //PUT API for a specific item
         app.put('/updateItem/:id', async (req, res) => {
             const id = req.params.id;
