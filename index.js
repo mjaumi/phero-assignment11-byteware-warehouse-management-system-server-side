@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { JsonWebTokenError } = require('jsonwebtoken');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -8,6 +10,23 @@ const port = process.env.PORT || 5000;
 // middlewires
 app.use(cors());
 app.use(express.json());
+
+// verifying JWT here 
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'Unauthorized Access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Access' });
+        }
+        console.log('decoded', decoded);
+        req.decoded = decoded;
+        next();
+    });
+}
 
 // mongoDB connection here
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tqizw.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -20,6 +39,25 @@ async function run() {
 
         console.log('DB connected');
 
+        /**
+         * -----------------------
+         * AUTHENTICATION API
+         * -----------------------
+         */
+        app.post('/getToken', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken });
+        });
+
+
+        /**
+         * ------------------------
+         * SERVICES API
+         * ------------------------
+         */
         // GET API for all items
         app.get('/items', async (req, res) => {
             const query = {};
@@ -37,12 +75,19 @@ async function run() {
         });
 
         // GET API for items added by supplier
-        app.get('/itemsBySupplier', async (req, res) => {
+        app.get('/itemsBySupplier', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const supplierEmail = req.query.email;
-            const query = { supplierEmail };
-            const cursor = itemsCollection.find(query);
-            const supplierItems = await cursor.toArray();
-            res.send(supplierItems);
+            if (supplierEmail === decodedEmail) {
+                const query = { supplierEmail };
+                const cursor = itemsCollection.find(query);
+                const supplierItems = await cursor.toArray();
+                res.send(supplierItems);
+            }
+
+            else {
+                res.status(403).send({ message: 'Forbidden Access' });
+            }
         });
 
         //PUT API for a specific item
