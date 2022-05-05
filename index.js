@@ -36,6 +36,7 @@ async function run() {
     try {
         await client.connect();
         const itemsCollection = client.db('inventory').collection('items');
+        const overviewCollection = client.db('inventory').collection('overview');
 
         console.log('DB connected');
 
@@ -75,6 +76,13 @@ async function run() {
             res.send(brandItems);
         });
 
+        // GET API for fetching overview data
+        app.get('/overview', async (req, res) => {
+            const query = {};
+            const overviewData = await overviewCollection.findOne(query);
+            res.send(overviewData);
+        });
+
         // GET API for a specific item
         app.get('/item/:id', async (req, res) => {
             const id = req.params.id;
@@ -99,7 +107,24 @@ async function run() {
             }
         });
 
-        //PUT API for a specific item
+        // PUT API for updating overview data
+        app.put('/updateOverview/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedOverviewData = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateOverview = {
+                $set: {
+                    totalCustomers: updatedOverviewData.totalCustomers,
+                    laptopSold: updatedOverviewData.laptopSold,
+                    revenue: updatedOverviewData.revenue
+                }
+            }
+            const updateResult = await overviewCollection.updateOne(filter, updateOverview, options);
+            res.send(updateResult);
+        });
+
+        // PUT API for a specific item
         app.put('/updateItem/:id', async (req, res) => {
             const id = req.params.id;
             const updatedQuantity = req.body;
@@ -114,7 +139,7 @@ async function run() {
             res.send(updateResult);
         });
 
-        //DELETE API for a specific item
+        // DELETE API for a specific item
         app.delete('/deleteItem/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -122,7 +147,7 @@ async function run() {
             res.send(deleteResult);
         });
 
-        //POST API to add new item
+        // POST API to add new item
         app.post('/addNewItem', async (req, res) => {
             const newItem = req.body;
             const addResult = await itemsCollection.insertOne(newItem);
