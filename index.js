@@ -72,7 +72,7 @@ async function run() {
             const countBrand = await itemsCollection.countDocuments(query);
             console.log(countBrand);
             res.send({ countBrand });
-        })
+        });
 
         // GET API for all items with pagination
         app.get('/items', async (req, res) => {
@@ -122,20 +122,38 @@ async function run() {
             res.send(item);
         });
 
-        // GET API for items added by supplier
+        // GET API for items added by supplier with pagination
         app.get('/itemsBySupplier', verifyJWT, async (req, res) => {
+            const currentPage = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
             const decodedEmail = req.decoded.email;
             const supplierEmail = req.query.email;
             if (supplierEmail === decodedEmail) {
                 const query = { supplierEmail };
                 const cursor = itemsCollection.find(query);
-                const supplierItems = await cursor.toArray();
+                let supplierItems;
+                if (currentPage || size) {
+
+                    supplierItems = await cursor.skip(currentPage * size).limit(size).toArray();
+                } else {
+
+                    supplierItems = await cursor.toArray();
+                }
                 res.send(supplierItems);
             }
 
             else {
                 res.status(403).send({ message: 'Forbidden Access' });
             }
+        });
+
+        // GET API to count supplier's items
+        app.get('/itemsCountBySupplier', async (req, res) => {
+            const supplierEmail = req.query.email;
+            const query = { supplierEmail };
+            const supplierItemsCount = await itemsCollection.countDocuments(query);
+            res.send({ supplierItemsCount });
         });
 
         // PUT API for updating overview data
