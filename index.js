@@ -66,6 +66,15 @@ async function run() {
             res.send(items);
         });
 
+        // GET API for searching with brands
+        app.get('/itemsByBrand', async (req, res) => {
+            const brand = req.query.brand;
+            const query = { brand };
+            const cursor = itemsCollection.find(query);
+            const brandItems = await cursor.toArray();
+            res.send(brandItems);
+        });
+
         // GET API for a specific item
         app.get('/item/:id', async (req, res) => {
             const id = req.params.id;
