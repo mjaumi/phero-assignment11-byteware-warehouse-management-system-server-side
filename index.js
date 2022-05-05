@@ -59,20 +59,51 @@ async function run() {
          * SERVICES API
          * ------------------------
          */
-        // GET API for all items
+        // GET API for items count
+        app.get('/itemsCount', async (req, res) => {
+            const count = await itemsCollection.estimatedDocumentCount();
+            res.send({ count });
+        });
+
+        // GET API for items count by brand
+        app.get('/itemsCountByBrand', async (req, res) => {
+            const brand = req.query.brand;
+            const query = { brand };
+            const countBrand = await itemsCollection.countDocuments(query);
+            console.log(countBrand);
+            res.send({ countBrand });
+        })
+
+        // GET API for all items with pagination
         app.get('/items', async (req, res) => {
+            const currentPage = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
             const query = {};
             const cursor = itemsCollection.find(query);
-            const items = await cursor.toArray();
+            let items;
+            if (currentPage || size) {
+                items = await cursor.skip(currentPage * size).limit(size).toArray();
+            } else {
+                items = await cursor.toArray();
+            }
             res.send(items);
         });
 
-        // GET API for searching with brands
+        // GET API for searching with brands pagination enabled
         app.get('/itemsByBrand', async (req, res) => {
             const brand = req.query.brand;
+            const currentPage = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
             const query = { brand };
             const cursor = itemsCollection.find(query);
-            const brandItems = await cursor.toArray();
+            let brandItems;
+            if (currentPage || size) {
+                brandItems = await cursor.skip(currentPage * size).limit(size).toArray();
+            } else {
+                brandItems = await cursor.toArray();
+            }
             res.send(brandItems);
         });
 
