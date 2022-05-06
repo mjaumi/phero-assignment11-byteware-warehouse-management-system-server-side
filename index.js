@@ -37,6 +37,7 @@ async function run() {
         await client.connect();
         const itemsCollection = client.db('inventory').collection('items');
         const overviewCollection = client.db('inventory').collection('overview');
+        const profileCollection = client.db('user').collection('profile');
 
         console.log('DB connected');
 
@@ -156,6 +157,14 @@ async function run() {
             res.send({ supplierItemsCount });
         });
 
+        // GET API to fetch user profile data
+        app.get('/userProfile', async (req, res) => {
+            const email = req.query.email;
+            const query = { email };
+            const userProfile = await profileCollection.findOne(query);
+            res.send(userProfile);
+        });
+
         // PUT API for updating overview data
         app.put('/updateOverview/:id', async (req, res) => {
             const id = req.params.id;
@@ -188,6 +197,23 @@ async function run() {
             res.send(updateResult);
         });
 
+        // PUT API to update profile data
+        app.put('/updateProfile/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedProfile = req.body;
+            const filter = { _id: ObjectId(id) };
+            const option = { upsert: true };
+            const updateProfile = {
+                $set: {
+                    added: updatedProfile.added,
+                    deleted: updatedProfile.deleted,
+                    delivered: updatedProfile.delivered
+                }
+            }
+            const profileUpdateResult = await profileCollection.updateOne(filter, updateProfile, option);
+            res.send(profileUpdateResult);
+        });
+
         // DELETE API for a specific item
         app.delete('/deleteItem/:id', async (req, res) => {
             const id = req.params.id;
@@ -201,6 +227,13 @@ async function run() {
             const newItem = req.body;
             const addResult = await itemsCollection.insertOne(newItem);
             res.send(addResult);
+        });
+
+        // POST API to create new user profile
+        app.post('/userProfile', async (req, res) => {
+            const newProfile = req.body;
+            const addProfileResult = await profileCollection.insertOne(newProfile);
+            res.send(addProfileResult);
         });
 
     } finally {
